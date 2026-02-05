@@ -4,6 +4,14 @@ export interface PortfolioTarget {
   targetPercentage: number;
 }
 
+export interface PortfolioDrift {
+  symbol: string;
+  current: number;
+  target: number;
+  drift: number; 
+  needsRebalance: boolean;
+}
+
 export interface PortfolioAllocation {
   mint: string;
   symbol: string;

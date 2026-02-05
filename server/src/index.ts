@@ -77,6 +77,26 @@ app.post("/api/swap/simulate", async (req: Request, res: Response) => {
   }
 });
 
+app.get("/status", async (req: Request, res: Response) => {
+  try {
+    const drifts = await portfolioService.checkPortfolioDrift();
+    const walletInfo = await solanaService.getWalletInfo();
+
+    res.json({
+      wallet: walletInfo,
+      drifts,
+      needsRebalance: drifts.some((d) => d.needsRebalance),
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get portfolio status" });
+  }
+});
+
+app.post("/rebalance", async (req: Request, res: Response) => {
+  // Manual trigger for testing
+  res.json({ message: "Rebalance triggered" });
+});
+
 // Start server
 const PORT = config.server.port;
 app.listen(PORT, () => {

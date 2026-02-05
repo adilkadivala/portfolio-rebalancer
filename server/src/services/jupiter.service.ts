@@ -1,26 +1,24 @@
-import axios from 'axios';
-import { logger } from '../utils/logger';
+import axios from "axios";
+import { Connection, PublicKey, VersionedTransaction } from "@solana/web3.js";
+import { solanaService } from "./solana.service";
+import { logger } from "../utils/logger";
 
 export class JupiterService {
+  private readonly JUPITER_API = "https://quote-api.jup.ag/v6";
+
   async getQuote(inputMint: string, outputMint: string, amount: number) {
     try {
-      const amountInSmallestUnit = Math.floor(amount * 1e6);
-
-      const response = await axios.get('https://api.jup.ag/price/v2', {
+      const response = await axios.get(`${this.JUPITER_API}/quote`, {
         params: {
-          ids: [inputMint, outputMint].join(','),
+          inputMint,
+          outputMint,
+          amount: Math.floor(amount * 1e9), // Convert to lamports
+          slippageBps: 50, // 0.5% slippage
         },
       });
-
-      return {
-        inputMint,
-        outputMint,
-        amount,
-        timestamp: new Date(),
-        quote: response.data,
-      };
+      return response.data;
     } catch (error) {
-      logger.error('Failed to get Jupiter quote', error);
+      logger.error("Failed to get Jupiter quote", error);
       throw error;
     }
   }
@@ -35,7 +33,7 @@ export class JupiterService {
         quote,
       };
     } catch (error) {
-      logger.error('Failed to simulate swap', error);
+      logger.error("Failed to simulate swap", error);
       throw error;
     }
   }
