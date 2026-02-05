@@ -1,9 +1,14 @@
 {
   "name": "server",
   "module": "index.ts",
-  "type": "module",
+  "type": "commonjs",
   "private": true,
-  "scripts": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node ./dist/index.js",
+    "dev": "tsc-watch --onSuccess \"npm start\""
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/cors": "^2.8.19",
@@ -21,6 +26,7 @@
     "bs58": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "tsc-watch": "^7.2.0"
   }
 }
