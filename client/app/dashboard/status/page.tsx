@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Zap, AlertTriangle, TrendingUp } from 'lucide-react';
 
-export function Stats() {
+export default function Stats() {
   const [stats, setStats] = useState({ health: false, wallet: false, portfolio: false });
 
   useEffect(() => {
@@ -30,44 +31,44 @@ export function Stats() {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-4">
-      <Card>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <Card className="bg-white/[0.01] border border-border/50">
         <CardContent className="pt-6">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${stats.health ? 'bg-green-100' : 'bg-red-100'}`}>
-              <Zap className={`w-5 h-5 ${stats.health ? 'text-green-600' : 'text-red-600'}`} />
+          <div className="flex items-center gap-4">
+            <div className={cn("p-2 border rounded", stats.health ? 'bg-secondary/5 border-secondary/20' : 'bg-destructive/5 border-destructive/20')}>
+              <Zap className={cn("w-4 h-4", stats.health ? 'text-secondary' : 'text-destructive')} />
             </div>
             <div>
-              <p className="text-xs text-gray-500">API Status</p>
-              <p className="font-semibold">{stats.health ? 'Connected' : 'Offline'}</p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Protocol API</p>
+              <p className="text-xs font-bold mt-0.5 tracking-tight">{stats.health ? 'OPERATIONAL' : 'OFFLINE'}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-white/[0.01] border border-border/50">
         <CardContent className="pt-6">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${stats.wallet ? 'bg-green-100' : 'bg-red-100'}`}>
-              <TrendingUp className={`w-5 h-5 ${stats.wallet ? 'text-green-600' : 'text-red-600'}`} />
+          <div className="flex items-center gap-4">
+            <div className={cn("p-2 border rounded", stats.wallet ? 'bg-secondary/5 border-secondary/20' : 'bg-destructive/5 border-destructive/20')}>
+              <TrendingUp className={cn("w-4 h-4", stats.wallet ? 'text-secondary' : 'text-destructive')} />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Wallet</p>
-              <p className="font-semibold">{stats.wallet ? 'Connected' : 'Error'}</p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Indexer Hub</p>
+              <p className="text-xs font-bold mt-0.5 tracking-tight">{stats.wallet ? 'SYNCHRONIZED' : 'ASYNC'}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-white/[0.01] border border-border/50">
         <CardContent className="pt-6">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${stats.portfolio ? 'bg-green-100' : 'bg-red-100'}`}>
-              <AlertTriangle className={`w-5 h-5 ${stats.portfolio ? 'text-green-600' : 'text-red-600'}`} />
+          <div className="flex items-center gap-4">
+            <div className={cn("p-2 border rounded", stats.portfolio ? 'bg-secondary/5 border-secondary/20' : 'bg-destructive/5 border-destructive/20')}>
+              <AlertTriangle className={cn("w-4 h-4", stats.portfolio ? 'text-secondary' : 'text-destructive')} />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Portfolio</p>
-              <p className="font-semibold">{stats.portfolio ? 'Synced' : 'Error'}</p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Risk Agent</p>
+              <p className="text-xs font-bold mt-0.5 tracking-tight">{stats.portfolio ? 'VIGILANT' : 'STALLED'}</p>
             </div>
           </div>
         </CardContent>

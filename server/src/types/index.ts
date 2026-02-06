@@ -2,6 +2,7 @@ export interface PortfolioTarget {
   mint: string;
   symbol: string;
   targetPercentage: number;
+  decimals: number;
 }
 
 export interface PortfolioDrift {
@@ -20,6 +21,7 @@ export interface PortfolioAllocation {
   percentage: number;
   targetPercentage: number;
   drift: number;
+  decimals: number;
 }
 
 export interface PortfolioSnapshot {

@@ -7,6 +7,7 @@ import {
   PortfolioDrift,
 } from "../types";
 import { solanaService } from "./solana.service";
+import { jupiterService } from "./jupiter.service";
 
 export class PortfolioService {
   private targets: PortfolioTarget[] = [
@@ -14,21 +15,25 @@ export class PortfolioService {
       mint: "11111111111111111111111111111111",
       symbol: "SOL",
       targetPercentage: 40,
+      decimals: 9,
     },
     {
       mint: "EPjFWaLb3hyccqJ1xNg7Pg8FFUStZYNYWzJRvDb34Awm",
       symbol: "USDC",
       targetPercentage: 30,
+      decimals: 6,
     },
     {
       mint: "JUPyiwrYJFskidkutsNvSQkM4cqee9JiNW9LewDqVLw",
       symbol: "JUP",
       targetPercentage: 20,
+      decimals: 6, // JUP is 6 decimals
     },
     {
       mint: "DezXAZ8z7PnrnRJjV3F7C1ft5dYjduGoVvzQVESFVqWj",
       symbol: "BONK",
       targetPercentage: 10,
+      decimals: 5, // BONK is 5 decimals
     },
   ];
 
@@ -48,17 +53,12 @@ export class PortfolioService {
       const allocations: PortfolioAllocation[] = [];
       let totalUsdValue = 0;
 
-      // Mock data for MVP - you'll integrate real price feeds later
-      const mockPrices: { [key: string]: number } = {
-        "11111111111111111111111111111111": 190, // SOL
-        EPjFWaLb3hyccqJ1xNg7Pg8FFUStZYNYWzJRvDb34Awm: 1, // USDC
-        JUPyiwrYJFskidkutsNvSQkM4cqee9JiNW9LewDqVLw: 3.5, // JUP
-        DezXAZ8z7PnrnRJjV3F7C1ft5dYjduGoVvzQVESFVqWj: 0.00001, // BONK
-      };
+      const mints = this.targets.map(t => t.mint);
+      const prices = await jupiterService.getTokenPrices(mints);
 
       for (const target of this.targets) {
         const amount = await solanaService.getTokenBalance(target.mint);
-        const price = mockPrices[target.mint] || 0;
+        const price = prices[target.mint] || 0;
         const usdValue = amount * price;
         totalUsdValue += usdValue;
 
@@ -70,6 +70,7 @@ export class PortfolioService {
           percentage: 0,
           targetPercentage: target.targetPercentage,
           drift: 0,
+          decimals: target.decimals,
         });
       }
 
@@ -99,6 +100,9 @@ export class PortfolioService {
     const drifts: PortfolioDrift[] = [];
     let totalValue = 0;
 
+    const mints = this.targets.map(t => t.mint);
+    const prices = await jupiterService.getTokenPrices(mints);
+
     // Get current balances
     const balances = await Promise.all(
       this.targets.map(async (target) => {
@@ -107,8 +111,7 @@ export class PortfolioService {
             ? await solanaService.getBalance()
             : await solanaService.getTokenBalance(target.mint);
 
-        // TODO: Get real price from Jupiter/Pyth
-        const price = target.symbol === "SOL" ? 190 : 1; // Placeholder
+        const price = prices[target.mint] || 0;
         const value = balance * price;
         totalValue += value;
 
@@ -132,19 +135,53 @@ export class PortfolioService {
     return drifts;
   }
 
-  async suggestRebalanceTrades(drifts: PortfolioDrift[]) {
-    const needsRebalance = drifts.filter((d) => d.needsRebalance);
+  async suggestRebalanceTrades(snapshot: PortfolioSnapshot) {
+    const trades: any[] = [];
+    const pivotMint = "EPjFWaLb3hyccqJ1xNg7Pg8FFUStZYNYWzJRvDb34Awm"; // USDC
+    
+    // 1. Identify Overweight (Sells to USDC)
+    for (const alloc of snapshot.allocations) {
+      if (alloc.drift > this.driftThreshold && alloc.mint !== pivotMint) {
+        // We need to sell this much USD value of the token
+        const usdToSell = (alloc.drift / 100) * snapshot.totalUsdValue;
+        const price = alloc.usdValue / alloc.amount;
+        const tokensToSell = usdToSell / price;
+        
+        const amountAtoms = Math.floor(tokensToSell * Math.pow(10, alloc.decimals));
 
-    if (needsRebalance.length === 0) {
-      logger.info("Portfolio is balanced");
-      return [];
+        if (amountAtoms > 0) {
+          trades.push({
+            action: "SELL",
+            inputMint: alloc.mint,
+            outputMint: pivotMint,
+            amountAtoms,
+            symbol: alloc.symbol,
+            usdValue: usdToSell
+          });
+        }
+      }
     }
 
-    const trades = needsRebalance.map((drift) => ({
-      action: drift.drift > 0 ? "SELL" : "BUY",
-      symbol: drift.symbol,
-      amount: Math.abs(drift.drift),
-    }));
+    // 2. Identify Underweight (Buys from USDC)
+    for (const alloc of snapshot.allocations) {
+      if (alloc.drift < -this.driftThreshold && alloc.mint !== pivotMint) {
+        const usdToBuy = (Math.abs(alloc.drift) / 100) * snapshot.totalUsdValue;
+        
+        // We sell USDC to buy this token
+        const amountAtoms = Math.floor(usdToBuy * 1e6); // USDC has 6 decimals
+
+        if (amountAtoms > 0) {
+          trades.push({
+            action: "BUY",
+            inputMint: pivotMint,
+            outputMint: alloc.mint,
+            amountAtoms,
+            symbol: alloc.symbol,
+            usdValue: usdToBuy
+          });
+        }
+      }
+    }
 
     return trades;
   }

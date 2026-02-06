@@ -2,6 +2,7 @@
 
 # dependencies
 **/node_modules
+**/.next9
 
 
 /.pnp
@@ -16,7 +17,7 @@
 /coverage
 
 # next.js
-/.next/
+.next
 /out/
 
 # production
@@ -45,7 +46,7 @@ server/tsconfig.json
 client/tsconfig.json
 client/next-env.d.ts
 server/next-env.d.ts
-client/dist
+client/.next
 server/dist
 client/src/**/*.tsbuildinfo
 server/src/**/*.tsbuildinfo 

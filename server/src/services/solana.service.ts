@@ -22,7 +22,15 @@ export class SolanaService {
     }
 
     const privateKeyBytes = bs58.decode(config.agent.privateKey);
-    this.wallet = Keypair.fromSecretKey(privateKeyBytes);
+    
+    if (privateKeyBytes.length === 32) {
+      this.wallet = Keypair.fromSeed(privateKeyBytes);
+    } else if (privateKeyBytes.length === 64) {
+      this.wallet = Keypair.fromSecretKey(privateKeyBytes);
+    } else {
+      throw new Error(`Invalid private key length: ${privateKeyBytes.length}. Expected 32 or 64 bytes.`);
+    }
+
     logger.info(`Wallet initialized: ${this.wallet.publicKey.toBase58()}`);
   }
 
@@ -35,8 +43,20 @@ export class SolanaService {
     return balance / 1e9;
   }
 
+  getWallet(): Keypair {
+    return this.wallet;
+  }
+
+  getConnection(): Connection {
+    return this.connection;
+  }
+
   async getTokenBalance(mint: string): Promise<number> {
     try {
+      if (mint === "11111111111111111111111111111111") {
+        return await this.getBalance();
+      }
+
       const tokenAccounts = await this.connection.getTokenAccountsByOwner(
         this.wallet.publicKey,
         { mint: new PublicKey(mint) },
@@ -50,8 +70,12 @@ export class SolanaService {
       console.log(`Owner: ${parsedAccountInfo.owner}`);
       console.log(`Amount: ${parsedAccountInfo.amount}`);
       return Number(parsedAccountInfo.amount) / 1e9; // ADD THIS LINE
-    } catch (error) {
-      logger.error(`Failed to get token balance for ${mint}`);
+    } catch (error: any) {
+      if (error.message.includes("could not find mint")) {
+        logger.debug(`Token mint ${mint} not found on this network. Returning 0 balance.`);
+      } else {
+        logger.error(`Failed to get token balance for ${mint}: ${error.message}`);
+      }
       return 0;
     }
   }

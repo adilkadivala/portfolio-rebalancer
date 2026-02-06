@@ -31,18 +31,41 @@ export class RebalancerService {
     try {
       logger.info('Checking portfolio...');
       
-      const drifts = await portfolioService.checkPortfolioDrift();
-      const trades = await portfolioService.suggestRebalanceTrades(drifts);
+      const snapshot = await portfolioService.getPortfolioSnapshot();
+      const trades = await portfolioService.suggestRebalanceTrades(snapshot);
 
       if (trades.length > 0) {
-        logger.info('Rebalance needed', { trades });
-        // TODO: Execute trades with safety checks
-        // await this.executeTrades(trades);
+        logger.info('Rebalance cycle started', { tradeCount: trades.length });
+        await this.executeTrades(trades);
       } else {
         logger.info('Portfolio balanced');
       }
     } catch (error) {
       logger.error('Rebalance check failed', error);
+    }
+  }
+
+  private async executeTrades(trades: any[]) {
+    for (const trade of trades) {
+      try {
+        logger.info(`Executing trade: ${trade.action} ${trade.symbol} ($${trade.usdValue.toFixed(2)})`);
+        
+        // 1. Get Quote
+        const quote = await jupiterService.getQuote(
+          trade.inputMint,
+          trade.outputMint,
+          trade.amountAtoms
+        );
+
+        // 2. Execute Swap
+        const txid = await jupiterService.executeSwap(quote);
+        logger.info(`Trade success: ${txid}`);
+
+        // Wait a bit between trades to avoid RPC rate limits
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (error) {
+        logger.error(`Trade failed for ${trade.symbol}`, error);
+      }
     }
   }
 }

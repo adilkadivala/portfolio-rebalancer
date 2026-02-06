@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { shortenAddress, formatUSD } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Wallet } from 'lucide-react';
 import type { WalletInfo as WalletInfoType } from '@/types';
 
@@ -36,22 +37,35 @@ export function WalletInfo() {
   if (!wallet) return null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Wallet className="w-5 h-5" />
-          Wallet
+    <Card className="bg-white/[0.01] border border-border/50 overflow-hidden relative">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em]">
+          <Wallet className="w-3.5 h-3.5" />
+          Custodian Vault
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-6">
           <div>
-            <p className="text-xs text-gray-500">Address</p>
-            <p className="text-sm font-mono text-gray-700">{shortenAddress(wallet.address)}</p>
+            <p className="text-3xl font-bold tracking-tight">
+              {formatUSD(wallet.totalUsdValue)}
+            </p>
+            <p className="text-[9px] font-mono text-muted-foreground mt-2 opacity-40 break-all leading-relaxed">
+              {wallet.address}
+            </p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Total Value</p>
-            <p className="text-lg font-bold">{formatUSD(wallet.totalUsdValue)}</p>
+          
+          <div className="pt-4 border-t border-white/[0.03] space-y-3">
+            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span>Network</span>
+              <Badge variant="outline" className="text-[9px] h-5 px-2 border-primary/20 text-primary bg-primary/5 rounded-none font-bold uppercase">
+                 SOLANA MAINNET
+              </Badge>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span>Status</span>
+              <span className="text-secondary font-bold">CONNECTED</span>
+            </div>
           </div>
         </div>
       </CardContent>

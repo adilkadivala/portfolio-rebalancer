@@ -14,6 +14,9 @@ export const config = {
   agent: {
     privateKey: process.env.AGENT_PRIVATE_KEY || "",
   },
+  groq: {
+    groq_key: process.env.GROQ_API_KEY || "",
+  },
   portfolio: {
     driftThreshold: 5,
     maxSlippagePercent: 1,
